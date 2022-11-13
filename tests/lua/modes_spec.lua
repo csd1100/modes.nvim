@@ -1,0 +1,6 @@
+describe("example", function()
+    it("helper test", function()
+        local module = require("modes")
+        assert.equals("hello helper", module.fn("hello"))
+    end)
+end)
