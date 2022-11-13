@@ -60,13 +60,13 @@ function module.getModeClass()
 	--- activate the mode
 	function Mode:activate(options)
 		self._enabled = true
-		self:_activationFn(options)
+		self._activationFn(options)
 	end
 
 	--- deactivate the mode
 	function Mode:deactivate(options)
 		self._enabled = false
-		self:_deactivationFn(options)
+		self._deactivationFn(options)
 	end
 
 	return Mode
