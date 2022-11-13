@@ -1,5 +1,4 @@
 local modeClass = require("modes.mode-class").getModeClass()
-local utils = require("lua.utils")
 
 local modeStorage = {}
 
