@@ -2,7 +2,7 @@ local module = {}
 --- Get Icon for Mode.
 -- If icon is not provided then return 1st character of id
 ---@param id string id of mode
----@param icon character icon for mode
+---@param icon string icon for mode
 ---@return string icon to be used by mode
 local function getValidIcon(id, icon)
 	if icon == nil or icon == "" then
@@ -46,26 +46,27 @@ function module.getModeClass()
 	end
 
 	--- get icon of the Mode object
-	---@return character
+	---@return string
 	function Mode:getIcon()
 		return self._icon
 	end
 
-	--- toggle the mode;
-	-- calls activationFn and deactivationFn on toggle
-	function Mode:toggle()
-		self._enabled = not self._enabled
-		if self._enabled then
-			self:_activationFn()
-		else
-			self:_deactivationFn()
-		end
+	--- is mode enabled at some scope
+	---@return boolean
+	function Mode:isEnabled()
+		return self._enabled
 	end
 
-	--- get enabled status of the mode
-	---@return boolean
-	function Mode:isActive()
-		return self._enabled
+	--- activate the mode
+	function Mode:activate(options)
+		self._enabled = true
+		self:_activationFn(options)
+	end
+
+	--- deactivate the mode
+	function Mode:deactivate(options)
+		self._enabled = false
+		self:_deactivationFn(options)
 	end
 
 	return Mode
