@@ -52,22 +52,18 @@ function M.DeepPrint(e)
 	end
 end
 
-function M.if_successful(plug)
-	local status, plugin = pcall(require, plug)
-	if not status then
-		vim.notify("failed to load " .. plug, "error")
-		return
+--- check if table has value
+---@param table table
+---@param value any
+---@return boolean
+function M.has_value(table, value)
+	for _, val in ipairs(table) do
+		if val == value then
+			return true
+		end
 	end
-	return plugin
-end
 
-function M.if_successful_then_setup(plug)
-	local plugin = M.if_successful(plug)
-	if not plugin then
-		vim.notify("failed to load and setup " .. plug, "error")
-		return
-	end
-	plugin.setup()
+	return false
 end
 
 --- Filter an array, returning entries matching `key_values`.
