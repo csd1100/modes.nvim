@@ -4,6 +4,8 @@ local modeStorage = {}
 
 local module = {}
 
+module.setup_called = false
+
 module.activeModes = {}
 
 --- get global active modes list
@@ -38,6 +40,7 @@ local function addToBufferList(id, options)
 	bufferList(options.buffer)[id] = {
 		id = id,
 		icon = mode:getIcon(),
+		options = options,
 	}
 end
 
@@ -98,6 +101,7 @@ local function addToGlobalList(id, options)
 	globalList()[id] = {
 		id = id,
 		icon = mode:getIcon(),
+		options = options,
 	}
 end
 
@@ -121,13 +125,29 @@ local function handleGlobalToggle(id, options)
 	end
 end
 
+local function onBufDelClearActiveModes()
+	local bufnr = tonumber(vim.fn.expand("<abuf>"))
+	if not bufferList(bufnr) then
+		return
+	end
+
+	for id, data in pairs(bufferList(bufnr)) do
+		module.toggleMode(id, data.options)
+		bufferList(bufnr)[id] = nil
+	end
+	module.activeModes[bufnr] = nil
+end
+
 --- Get a mode or Create a new Mode
 ---@param id string identifier for Mode
 ---@param activationFn function to be called when enabled
 ---@param deactivationFn function to be called when disabled
 ---@param icon string icon to be displayed
----@return Mode.id
+---@return any
 function module.createIfNotPresent(id, activationFn, deactivationFn, icon)
+	if not module.setup_called then
+		return
+	end
 	if not id or not activationFn or not deactivationFn then
 		error("id, activationFn and deactivationFn are required")
 	end
@@ -143,11 +163,17 @@ end
 ---@param id string
 ---@param options table
 function module.toggleMode(id, options)
+	if not module.setup_called then
+		return
+	end
+
 	local mode = modeStorage[id]
 	if not mode then
 		error("Mode " .. id .. " doesn't exist'")
 	end
+
 	if options and options.buffer then
+		print("toggleMode called bufnr " .. options.buffer)
 		handleBufferToggle(id, options)
 	else
 		handleGlobalToggle(id, options)
@@ -158,7 +184,7 @@ end
 ---@return table list of icons
 function module.getActiveModesIcons(buffer)
 	local iconList = {}
-	for key, idAndIcon in pairs(module.activeModes[buffer]) do
+	for _, idAndIcon in pairs(module.activeModes[buffer]) do
 		table.insert(iconList, idAndIcon.icon)
 	end
 	return iconList
@@ -168,6 +194,17 @@ end
 function module.deleteAllModes()
 	modeStorage = {}
 	module.activeModes = {}
+end
+
+function module.setup()
+	vim.api.nvim_create_augroup("ModesNvim", {
+		clear = true,
+	})
+	vim.api.nvim_create_autocmd("BufDelete", {
+		group = "ModesNvim",
+		callback = onBufDelClearActiveModes,
+	})
+	module.setup_called = true
 end
 
 return module
