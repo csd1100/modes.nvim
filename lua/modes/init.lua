@@ -173,7 +173,6 @@ function module.toggleMode(id, options)
 	end
 
 	if options and options.buffer then
-		print("toggleMode called bufnr " .. options.buffer)
 		handleBufferToggle(id, options)
 	else
 		handleGlobalToggle(id, options)
