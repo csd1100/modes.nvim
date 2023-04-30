@@ -1,45 +1,45 @@
-local modeClass = require("modes.mode-class").getModeClass()
+local mode_class = require("modes.mode-class").get_mode_class()
 
-local modeStorage = {}
+local mode_storage = {}
 
 local module = {}
 
 module.setup_called = false
 
-module.activeModes = {}
+module.active_modes = {}
 
 --- get global active modes list
 ---@return table
-local globalList = function()
-    if not module.activeModes["*"] then
-        module.activeModes["*"] = {}
+local global_list = function()
+    if not module.active_modes["*"] then
+        module.active_modes["*"] = {}
     end
-    return module.activeModes["*"]
+    return module.active_modes["*"]
 end
 
 --- get list of active modes for buffer
 ---@param buffer number
 ---@return table
-local bufferList = function(buffer)
-    if not module.activeModes[buffer] then
-        module.activeModes[buffer] = {}
+local buffer_list = function(buffer)
+    if not module.active_modes[buffer] then
+        module.active_modes[buffer] = {}
     end
-    return module.activeModes[buffer]
+    return module.active_modes[buffer]
 end
 
 --- add mode to buffer active modes list
 ---@param id string
 ---@param options table
-local function addToBufferList(id, options)
-    if globalList()[id] then
+local function add_to_buffer_list(id, options)
+    if global_list()[id] then
         print("Mode " .. id .. " is already enabled Globally")
         return
     end
-    local mode = modeStorage[id]
+    local mode = mode_storage[id]
     mode:activate(options)
-    bufferList(options.buffer)[id] = {
+    buffer_list(options.buffer)[id] = {
         id = id,
-        icon = mode:getIcon(),
+        icon = mode:get_icon(),
         options = options,
     }
 end
@@ -47,23 +47,23 @@ end
 --- remove mode from buffer's active modes list
 ---@param id string
 ---@param options table
-local function removeFromBufferList(id, options)
-    if globalList()[id] then
+local function remove_from_buffer_list(id, options)
+    if global_list()[id] then
         error("Mode " .. id .. " is enabled Globally")
     end
-    local mode = modeStorage[id]
+    local mode = mode_storage[id]
     mode:deactivate(options)
-    bufferList(options.buffer)[id] = nil
+    buffer_list(options.buffer)[id] = nil
 end
 
 --- handle toggling of mode for buffer
 ---@param id string identifier of buffer
 ---@param options table additional options
-local function handleBufferToggle(id, options)
-    if bufferList(options.buffer)[id] then
-        removeFromBufferList(id, options)
+local function handle_buffer_toggle(id, options)
+    if buffer_list(options.buffer)[id] then
+        remove_from_buffer_list(id, options)
     else
-        addToBufferList(id, options)
+        add_to_buffer_list(id, options)
     end
 end
 
@@ -71,36 +71,36 @@ end
 ---@param id string identifier for mode
 ---@return table list of buffer for which mode is active
 local function get_active_buffers(id)
-    local activeBuffersList = {}
-    for buffer, modes_list in pairs(module.activeModes) do
+    local active_buffers_list = {}
+    for buffer, modes_list in pairs(module.active_modes) do
         if buffer == "*" then
             goto continue
         else
             if vim.tbl_contains(vim.tbl_keys(modes_list), id) then
-                table.insert(activeBuffersList, buffer)
+                table.insert(active_buffers_list, buffer)
             end
         end
         ::continue::
     end
-    return activeBuffersList
+    return active_buffers_list
 end
 
 --- add mode to global active modes list
 ---@param id string identifier of mode
 ---@param options table additional options
-local function addToGlobalList(id, options)
-    local inBuffersList = get_active_buffers(id)
-    if #inBuffersList > 0 then
+local function add_to_global_list(id, options)
+    local in_buffers_list = get_active_buffers(id)
+    if #in_buffers_list > 0 then
         print("Mode " .. id .. " is enabled in buffers; disabling")
-        for _, buffer in pairs(inBuffersList) do
-            bufferList(buffer)[id] = nil
+        for _, buffer in pairs(in_buffers_list) do
+            buffer_list(buffer)[id] = nil
         end
     end
-    local mode = modeStorage[id]
+    local mode = mode_storage[id]
     mode:activate(options)
-    globalList()[id] = {
+    global_list()[id] = {
         id = id,
-        icon = mode:getIcon(),
+        icon = mode:get_icon(),
         options = options,
     }
 end
@@ -108,91 +108,91 @@ end
 --- remove mode from global active modes list
 ---@param id string identifier of mode
 ---@param options table additional options
-local function removeFromGlobalList(id, options)
-    local mode = modeStorage[id]
+local function remove_from_global_list(id, options)
+    local mode = mode_storage[id]
     mode:deactivate(options)
-    globalList()[id] = nil
+    global_list()[id] = nil
 end
 
 --- toggle mode globally
 ---@param id string identifier of mode
 ---@param options table additional options
-local function handleGlobalToggle(id, options)
-    if globalList()[id] then
-        removeFromGlobalList(id, options)
+local function handle_global_toggle(id, options)
+    if global_list()[id] then
+        remove_from_global_list(id, options)
     else
-        addToGlobalList(id, options)
+        add_to_global_list(id, options)
     end
 end
 
-local function onBufDelClearActiveModes()
+local function on_BufDel_clear_active_modes()
     local bufnr = tonumber(vim.fn.expand("<abuf>"))
-    if not bufferList(bufnr) then
+    if not buffer_list(bufnr) then
         return
     end
 
-    for id, data in pairs(bufferList(bufnr)) do
-        module.toggleMode(id, data.options)
-        bufferList(bufnr)[id] = nil
+    for id, data in pairs(buffer_list(bufnr)) do
+        module.toggle_mode(id, data.options)
+        buffer_list(bufnr)[id] = nil
     end
-    module.activeModes[bufnr] = nil
+    module.active_modes[bufnr] = nil
 end
 
---- Get a mode or Create a new Mode
+--- get a mode or create a new Mode
 ---@param id string identifier for Mode
----@param activationFn function to be called when enabled
----@param deactivationFn function to be called when disabled
+---@param activation_fn function to be called when enabled
+---@param deactivation_fn function to be called when disabled
 ---@param icon string icon to be displayed
 ---@return any
-function module.createIfNotPresent(id, activationFn, deactivationFn, icon)
+function module.create_if_not_present(id, activation_fn, deactivation_fn, icon)
     if not module.setup_called then
         return
     end
-    if not id or not activationFn or not deactivationFn then
-        error("id, activationFn and deactivationFn are required")
+    if not id or not activation_fn or not deactivation_fn then
+        error("id, activation_fn and deactivation_fn are required")
     end
-    local mode = modeStorage[id]
+    local mode = mode_storage[id]
     if not mode then
-        mode = modeClass.new(id, activationFn, deactivationFn, icon)
-        modeStorage[id] = mode
+        mode = mode_class.new(id, activation_fn, deactivation_fn, icon)
+        mode_storage[id] = mode
     end
-    return mode:getId()
+    return mode:get_id()
 end
 
 --- toggle the mode
 ---@param id string
 ---@param options table
-function module.toggleMode(id, options)
+function module.toggle_mode(id, options)
     if not module.setup_called then
         return
     end
 
-    local mode = modeStorage[id]
+    local mode = mode_storage[id]
     if not mode then
         error("Mode " .. id .. " doesn't exist'")
     end
 
     if options and options.buffer then
-        handleBufferToggle(id, options)
+        handle_buffer_toggle(id, options)
     else
-        handleGlobalToggle(id, options)
+        handle_global_toggle(id, options)
     end
 end
 
 --- get list of icons of active modes to display
 ---@return table list of icons
-function module.getActiveModesIcons(buffer)
-    local iconList = {}
-    for _, idAndIcon in pairs(module.activeModes[buffer]) do
-        table.insert(iconList, idAndIcon.icon)
+function module.get_active_modes_icons(buffer)
+    local icon_list = {}
+    for _, id_and_icon in pairs(module.active_modes[buffer]) do
+        table.insert(icon_list, id_and_icon.icon)
     end
-    return iconList
+    return icon_list
 end
 
---- Remove all defined modes from storage
-function module.deleteAllModes()
-    modeStorage = {}
-    module.activeModes = {}
+--- remove all defined modes from storage
+function module.delete_all_modes()
+    mode_storage = {}
+    module.active_modes = {}
 end
 
 function module.setup()
@@ -201,7 +201,7 @@ function module.setup()
     })
     vim.api.nvim_create_autocmd("BufDelete", {
         group = "ModesNvim",
-        callback = onBufDelClearActiveModes,
+        callback = on_BufDel_clear_active_modes,
     })
     module.setup_called = true
 end

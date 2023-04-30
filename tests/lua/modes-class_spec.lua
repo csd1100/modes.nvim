@@ -1,46 +1,46 @@
 local spy = require("luassert.spy")
 
 describe("modes-class_spec", function()
-    local modeClass
+    local mode_class
 
     before_each(function()
-        modeClass = require("modes.mode-class").getModeClass()
+        mode_class = require("modes.mode-class").get_mode_class()
     end)
 
     it("mode-class.new creates a new mode", function()
-        local testData = {
+        local test_data = {
             id = "one",
             icon = "1",
-            activationFn = spy.new(function() end),
-            deactivationFn = spy.new(function() end),
+            activation_fn = spy.new(function() end),
+            deactivation_fn = spy.new(function() end),
         }
 
-        local mode = modeClass.new(
-            testData.id,
-            testData.activationFn,
-            testData.deactivationFn,
-            testData.icon
+        local mode = mode_class.new(
+            test_data.id,
+            test_data.activation_fn,
+            test_data.deactivation_fn,
+            test_data.icon
         )
 
-        assert.equals(mode:getId(), "one")
-        assert.equals(mode:getIcon(), "1")
+        assert.equals(mode:get_id(), "one")
+        assert.equals(mode:get_icon(), "1")
     end)
 
-    it("mode:getIcon returns initial of id if icon not provided", function()
-        local testData = {
+    it("mode:get_icon returns initial of id if icon not provided", function()
+        local test_data = {
             id = "one",
             icon = nil,
-            activationFn = spy.new(function() end),
-            deactivationFn = spy.new(function() end),
+            activation_fn = spy.new(function() end),
+            deactivation_fn = spy.new(function() end),
         }
 
-        local mode = modeClass.new(
-            testData.id,
-            testData.activationFn,
-            testData.deactivationFn,
-            testData.icon
+        local mode = mode_class.new(
+            test_data.id,
+            test_data.activation_fn,
+            test_data.deactivation_fn,
+            test_data.icon
         )
 
-        assert.equals(mode:getIcon(), "o")
+        assert.equals(mode:get_icon(), "o")
     end)
 end)
