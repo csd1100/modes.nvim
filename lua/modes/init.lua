@@ -6,7 +6,7 @@ local module = {}
 
 module.setup_called = false
 
-module.active_modes = {}
+module._active_modes = {}
 
 local throw_error = function (msg)
     vim.notify(msg, vim.log.levels.ERROR)
@@ -16,20 +16,20 @@ end
 --- get global active modes list
 ---@return table
 local global_list = function()
-    if not module.active_modes["*"] then
-        module.active_modes["*"] = {}
+    if not module._active_modes["*"] then
+        module._active_modes["*"] = {}
     end
-    return module.active_modes["*"]
+    return module._active_modes["*"]
 end
 
 --- get list of active modes for buffer
 ---@param buffer number
 ---@return table
 local buffer_list = function(buffer)
-    if not module.active_modes[buffer] then
-        module.active_modes[buffer] = {}
+    if not module._active_modes[buffer] then
+        module._active_modes[buffer] = {}
     end
-    return module.active_modes[buffer]
+    return module._active_modes[buffer]
 end
 
 --- add mode to buffer active modes list
@@ -77,7 +77,7 @@ end
 ---@return table list of buffer for which mode is active
 local function get_active_buffers(id)
     local active_buffers_list = {}
-    for buffer, modes_list in pairs(module.active_modes) do
+    for buffer, modes_list in pairs(module._active_modes) do
         if buffer == "*" then
             goto continue
         else
@@ -140,7 +140,7 @@ local function on_BufDel_clear_active_modes()
         module.toggle_mode(id, data.options)
         buffer_list(bufnr)[id] = nil
     end
-    module.active_modes[bufnr] = nil
+    module._active_modes[bufnr] = nil
 end
 
 --- get a mode or create a new Mode
@@ -188,7 +188,7 @@ end
 ---@return table list of icons
 function module.get_active_modes_icons(buffer)
     local icon_list = {}
-    for _, id_and_icon in pairs(module.active_modes[buffer]) do
+    for _, id_and_icon in pairs(module._active_modes[buffer]) do
         table.insert(icon_list, id_and_icon.icon)
     end
     return icon_list
@@ -197,7 +197,7 @@ end
 --- remove all defined modes from storage
 function module.delete_all_modes()
     mode_storage = {}
-    module.active_modes = {}
+    module._active_modes = {}
 end
 
 function module.setup()
