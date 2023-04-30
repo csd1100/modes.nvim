@@ -118,7 +118,7 @@ describe("modes_spec", function()
         -- assert mode was added
         assert.same(
             modes.activeModes["1"][testData.id],
-            { id = testData.id, icon = testData.icon }
+            { id = testData.id, icon = testData.icon, options = options1 }
         )
         modes.toggleMode(mode, options1)
         -- assert mode was removed
@@ -279,7 +279,6 @@ describe("modes_spec", function()
             assert(#iconListLocal == 0, true)
         end)
 
-        -- TODO: either flaky test or flaky code --
         it("mode enabled globally try to deactivate locally", function()
             local iconListGlobal
             local iconListLocal

@@ -70,26 +70,26 @@ end
 --- check if mode is enabled for any buffer
 ---@param id string identifier for mode
 ---@return table list of buffer for which mode is active
--- TODO: might be unstable causing mode not removed from buffer list when enabling globally
-local function isInBufferList(id)
-    local inBuffersList = {}
-    for key, value in pairs(module.activeModes) do
-        if key == "*" then
-            break
+local function get_active_buffers(id)
+    local activeBuffersList = {}
+    for buffer, modes_list in pairs(module.activeModes) do
+        if buffer == "*" then
+            goto continue
         else
-            if value[id] then
-                table.insert(inBuffersList, key)
+            if vim.tbl_contains(vim.tbl_keys(modes_list), id) then
+                table.insert(activeBuffersList, buffer)
             end
         end
+        ::continue::
     end
-    return inBuffersList
+    return activeBuffersList
 end
 
 --- add mode to global active modes list
 ---@param id string identifier of mode
 ---@param options table additional options
 local function addToGlobalList(id, options)
-    local inBuffersList = isInBufferList(id)
+    local inBuffersList = get_active_buffers(id)
     if #inBuffersList > 0 then
         print("Mode " .. id .. " is enabled in buffers; disabling")
         for _, buffer in pairs(inBuffersList) do
