@@ -8,6 +8,11 @@ module.setup_called = false
 
 module.active_modes = {}
 
+local throw_error = function (msg)
+    vim.notify(msg, vim.log.levels.ERROR)
+    error(msg)
+end
+
 --- get global active modes list
 ---@return table
 local global_list = function()
@@ -49,7 +54,7 @@ end
 ---@param options table
 local function remove_from_buffer_list(id, options)
     if global_list()[id] then
-        error("Mode " .. id .. " is enabled Globally")
+        throw_error("Mode " .. id .. " is enabled Globally")
     end
     local mode = mode_storage[id]
     mode:deactivate(options)
@@ -149,7 +154,7 @@ function module.create_if_not_present(id, activation_fn, deactivation_fn, icon)
         return
     end
     if not id or not activation_fn or not deactivation_fn then
-        error("id, activation_fn and deactivation_fn are required")
+        throw_error("id, activation_fn and deactivation_fn are required")
     end
     local mode = mode_storage[id]
     if not mode then
@@ -169,7 +174,7 @@ function module.toggle_mode(id, options)
 
     local mode = mode_storage[id]
     if not mode then
-        error("Mode " .. id .. " doesn't exist'")
+        throw_error("Mode " .. id .. " doesn't exist'")
     end
 
     if options and options.buffer then
