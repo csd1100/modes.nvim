@@ -6,7 +6,7 @@ local module = {}
 
 module.setup_called = false
 
-module._active_modes = {}
+local _active_modes = {}
 
 local throw_error = function(msg)
     vim.notify(msg, vim.log.levels.ERROR)
@@ -16,20 +16,20 @@ end
 --- get global active modes list
 ---@return table
 local global_list = function()
-    if not module._active_modes["*"] then
-        module._active_modes["*"] = {}
+    if not _active_modes["*"] then
+        _active_modes["*"] = {}
     end
-    return module._active_modes["*"]
+    return _active_modes["*"]
 end
 
 --- get list of active modes for buffer
 ---@param buffer number
 ---@return table
 local buffer_list = function(buffer)
-    if not module._active_modes[buffer] then
-        module._active_modes[buffer] = {}
+    if not _active_modes[buffer] then
+        _active_modes[buffer] = {}
     end
-    return module._active_modes[buffer]
+    return _active_modes[buffer]
 end
 
 --- add mode to buffer active modes list
@@ -77,7 +77,7 @@ end
 ---@return table list of buffer for which mode is active
 local function get_active_buffers(id)
     local active_buffers_list = {}
-    for buffer, modes_list in pairs(module._active_modes) do
+    for buffer, modes_list in pairs(_active_modes) do
         if buffer ~= "*" then
             if vim.tbl_contains(vim.tbl_keys(modes_list), id) then
                 table.insert(active_buffers_list, buffer)
@@ -91,6 +91,7 @@ end
 ---@param id string identifier of mode
 ---@param options table additional options
 local function add_to_global_list(id, options)
+    local mode = mode_storage[id]
     local in_buffers_list = get_active_buffers(id)
     if #in_buffers_list > 0 then
         print("Mode " .. id .. " is enabled in buffers; disabling")
@@ -98,7 +99,6 @@ local function add_to_global_list(id, options)
             buffer_list(buffer)[id] = nil
         end
     end
-    local mode = mode_storage[id]
     mode:activate(options)
     global_list()[id] = {
         id = id,
@@ -137,7 +137,7 @@ local function on_BufDel_clear_active_modes()
         module.toggle_mode(id, data.options)
         buffer_list(bufnr)[id] = nil
     end
-    module._active_modes[bufnr] = nil
+    _active_modes[bufnr] = nil
 end
 
 --- get a mode or create a new Mode
@@ -148,6 +148,9 @@ end
 ---@return any
 function module.create_if_not_present(id, activation_fn, deactivation_fn, icon)
     if not module.setup_called then
+        throw_error(
+            "Plugin not initialized, please add require('modes').setup() to config"
+        )
         return
     end
     if not id or not activation_fn or not deactivation_fn then
@@ -166,6 +169,9 @@ end
 ---@param options table
 function module.toggle_mode(id, options)
     if not module.setup_called then
+        throw_error(
+            "Plugin not initialized, please add require('modes').setup() to config"
+        )
         return
     end
 
@@ -185,7 +191,7 @@ end
 ---@return table list of icons
 function module.get_active_modes_icons(buffer)
     local icon_list = {}
-    for _, id_and_icon in pairs(module._active_modes[buffer]) do
+    for _, id_and_icon in pairs(_active_modes[buffer]) do
         table.insert(icon_list, id_and_icon.icon)
     end
     return icon_list
@@ -194,7 +200,15 @@ end
 --- remove all defined modes from storage
 function module._delete_all_modes()
     mode_storage = {}
-    module._active_modes = {}
+    _active_modes = {}
+end
+
+function module._get_globally_active_mode_with_id(id)
+    return _active_modes["*"][id]
+end
+
+function module._get_buffer_active_mode_with_id(buffer, id)
+    return _active_modes[buffer][id]
 end
 
 function module.map(mode_id, maps, options) end

@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+nvim --headless -c "PlenaryBustedDirectory tests/lua/ {minimal_init='tests/minimal_init.lua'}"

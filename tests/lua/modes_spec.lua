@@ -39,12 +39,12 @@ describe("modes_spec", function()
         modes.toggle_mode(mode)
         -- assert mode was added
         assert.same(
-            modes._active_modes["*"][test_data.id],
+            modes._get_globally_active_mode_with_id(test_data.id),
             { id = test_data.id, icon = test_data.icon }
         )
         modes.toggle_mode(mode)
         -- assert mode was removed
-        assert.is_nil(modes._active_modes["*"][test_data.id])
+        assert.is_nil(modes._get_globally_active_mode_with_id(test_data.id))
     end)
 
     it("modes.get_active_modes_icons return valid list - global", function()
@@ -118,13 +118,14 @@ describe("modes_spec", function()
         -- toggle mode --
         modes.toggle_mode(mode, options1)
         -- assert mode was added
-        assert.same(
-            modes._active_modes["1"][test_data.id],
-            { id = test_data.id, icon = test_data.icon, options = options1 }
-        )
+        assert.same(modes._get_buffer_active_mode_with_id("1", test_data.id), {
+            id = test_data.id,
+            icon = test_data.icon,
+            options = options1,
+        })
         modes.toggle_mode(mode, options1)
         -- assert mode was removed
-        assert.is_nil(modes._active_modes["1"][test_data.id])
+        assert.is_nil(modes._get_buffer_active_mode_with_id("1", test_data.id))
     end)
 
     it("modes.get_active_modes_icons return valid list - buffer", function()
