@@ -10,7 +10,7 @@ describe("modes_spec", function()
     end)
 
     after_each(function()
-        modes.delete_all_modes()
+        modes._delete_all_modes()
     end)
 
     it("toggle_mode throws error if mode doesn't exist", function()
@@ -252,7 +252,7 @@ describe("modes_spec", function()
         end)
 
         after_each(function()
-            modes.delete_all_modes()
+            modes._delete_all_modes()
         end)
 
         it("mode enabled globally try to activate locally", function()

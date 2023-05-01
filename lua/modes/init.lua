@@ -8,7 +8,7 @@ module.setup_called = false
 
 module._active_modes = {}
 
-local throw_error = function (msg)
+local throw_error = function(msg)
     vim.notify(msg, vim.log.levels.ERROR)
     error(msg)
 end
@@ -78,14 +78,11 @@ end
 local function get_active_buffers(id)
     local active_buffers_list = {}
     for buffer, modes_list in pairs(module._active_modes) do
-        if buffer == "*" then
-            goto continue
-        else
+        if buffer ~= "*" then
             if vim.tbl_contains(vim.tbl_keys(modes_list), id) then
                 table.insert(active_buffers_list, buffer)
             end
         end
-        ::continue::
     end
     return active_buffers_list
 end
@@ -195,10 +192,14 @@ function module.get_active_modes_icons(buffer)
 end
 
 --- remove all defined modes from storage
-function module.delete_all_modes()
+function module._delete_all_modes()
     mode_storage = {}
     module._active_modes = {}
 end
+
+function module.map(mode_id, maps, options) end
+
+function module.unmap(mode_id, unmaps, options) end
 
 function module.setup()
     vim.api.nvim_create_augroup("ModesNvim", {
