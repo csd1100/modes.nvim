@@ -2,12 +2,24 @@
 --- @param tbl table - table to filter
 --- @param keys table - list of keys to remove
 --- @return table opts table without keys
-local function tbl_filter_keys(tbl, keys)
+local function tbl_remove_keys(tbl, keys)
     local opts = vim.deepcopy(tbl)
     for _, key in ipairs(keys) do
         opts[key] = nil
     end
     return opts
+end
+
+--- returns a new copy of table with only specified keys
+--- @param tbl table - table to filter
+--- @param keys table - list of keys to keep
+--- @return table opts table without keys
+local function tbl_filter_keys(tbl, keys)
+    local new_tbl = {}
+    for _, key in ipairs(keys) do
+        new_tbl[key] = tbl[key]
+    end
+    return new_tbl
 end
 
 --- `Mutates` a of passed in table adds nested table structure
@@ -30,9 +42,12 @@ local function init_nested_table(tbl, keys)
     -- deep_print(keys)
     keys = vim.deepcopy(keys)
     if #keys > 0 then
-        if not tbl[keys[1]] then
-            local key = keys[1]
+        local key = keys[1]
+        if not tbl[key] then
             tbl[key] = {}
+            table.remove(keys, 1)
+            init_nested_table(tbl[key], keys)
+        else
             table.remove(keys, 1)
             init_nested_table(tbl[key], keys)
         end
@@ -128,7 +143,6 @@ end
 --- @param maps table table containing keymaps tables
 local function find_map(maps, lhs)
     for _, map in ipairs(maps) do
-        print(map["lhs"])
         if map["lhs"] == lhs then
             return map
         end
@@ -210,6 +224,7 @@ end
 M.map = function(id, maps, options)
     maps = vim.deepcopy(maps)
     options = vim.deepcopy(options)
+    options = tbl_filter_keys(options, { "buffer" })
     for mode, mappings in pairs(maps) do
         map_mode(id, mode, mappings, options)
     end
@@ -259,7 +274,7 @@ local function get_opts_from_map(keymap)
         "lnum",
         "expr",
     }
-    return tbl_filter_keys(keymap, non_opts_keys)
+    return tbl_remove_keys(keymap, non_opts_keys)
 end
 
 --- restore existing keymap
@@ -275,7 +290,11 @@ local function restore_keymap(id, mode, keymap, opts)
     keymap = vim.deepcopy(keymap)
     remove_map(id, mode, keymap["lhs"], opts)
     local rhs = keymap["rhs"] or keymap["callback"]
-    vim.keymap.set(mode, keymap["lhs"], rhs, get_opts_from_map(keymap))
+    local options = get_opts_from_map(keymap)
+    if options["buffer"] == 0 then
+        options["buffer"] = nil
+    end
+    vim.keymap.set(mode, keymap["lhs"], rhs, options)
 end
 
 --- unmap keymaps for vim mode
@@ -307,64 +326,16 @@ end
 -- }
 M.unmap = function(id, unmaps, options)
     unmaps = vim.deepcopy(unmaps)
+    options = vim.deepcopy(options)
+    options = tbl_filter_keys(options, { "buffer" })
     for mode, unmappings in pairs(unmaps) do
         unmap_mode(id, mode, unmappings, options)
     end
 end
 
--- test data
--- local maps = {
---     ["n"] = {
---         {
---             "<leader>ldis",
---             ":lua print('<leader>ldis')<CR>",
---             { desc = "Do Something 2" },
---         },
---         {
---             "<leader>123",
---             ":lua print('<leader>123')<CR>",
---             { desc = "Do Something 2" },
---         },
---     },
--- }
--- local unmaps = {
---     ["n"] = {
---         "<leader>ldis",
---         "<leader>123",
---     },
--- }
+M._reset_caches = function()
+    M._maps_cache = {}
+    M._existing_maps_cache = {}
+end
 
--- local maps2 = {
---     ["n"] = {
---         {
---             "<leader>lq",
---             ":lua print('<leader>lq')<CR>",
---             { desc = "Do Something 2" },
---         },
---         {
---             "<leader>123",
---             ":lua print('<leader>123')<CR>",
---             { desc = "Do Something 2" },
---         },
---     },
--- }
--- local unmaps2 = {
---     ["n"] = {
---         "<leader>lq",
---         "<leader>123",
---     },
--- }
--- M.map("xxxx", maps2, {})
--- print("before")
--- print("_maps_cache")
--- deep_print(M._maps_cache)
--- print("_existing_maps_cache")
--- deep_print(M._existing_maps_cache)
--- print("===========================")
--- M.unmap("xxxx", unmaps2, {})
--- print("after")
--- print("_maps_cache")
--- deep_print(M._maps_cache)
--- print("_existing_maps_cache")
--- deep_print(M._existing_maps_cache)
 return M
