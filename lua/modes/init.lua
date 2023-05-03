@@ -1,4 +1,5 @@
 local mode_class = require("modes.mode-class").get_mode_class()
+local throw_error = require("modes.utils").throw_error
 
 local mode_storage = {}
 
@@ -7,11 +8,6 @@ local module = {}
 module.setup_called = false
 
 local _active_modes = {}
-
-local throw_error = function(msg)
-    vim.notify(msg, vim.log.levels.ERROR)
-    error(msg)
-end
 
 --- get global active modes list
 ---@return table
@@ -177,7 +173,7 @@ function module.toggle_mode(id, options)
 
     local mode = mode_storage[id]
     if not mode then
-        throw_error("Mode " .. id .. " doesn't exist'")
+        throw_error("Mode " .. id .. " doesn't exist")
     end
 
     if options and options.buffer then
