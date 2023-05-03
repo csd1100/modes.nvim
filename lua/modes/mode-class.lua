@@ -119,7 +119,7 @@ function module.get_mode_class()
                 "The Mode " .. self:get_id() .. " was not enabled Globally!"
             )
         else
-            self._buffers = nil
+            self._buffers = {}
         end
     end
 

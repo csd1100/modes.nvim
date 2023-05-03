@@ -131,7 +131,24 @@ describe("modes-class_spec", function()
         assert.is_not.True(mode:is_enabled_for_buffer(1))
 
         mode:toggle({ test_opt = "test" })
+
         assert.is_not.True(mode:is_enabled_globally())
-        assert.is_nil(mode._buffers)
+        assert.same(mode._buffers, {})
+
+        mode:toggle({ test_opt = "test" })
+        assert.same(mode._buffers, { ["*"] = { test_opt = "test" } })
+        assert.is.True(mode:is_enabled_globally())
+
+        mode:toggle({ test_opt = "test" })
+
+        assert.is_not.True(mode:is_enabled_globally())
+        assert.same(mode._buffers, {})
+
+        mode:toggle({ buffer = 1, test_1 = "1" })
+
+        assert.same(mode._buffers, { ["1"] = { buffer = 1, test_1 = "1" } })
+        assert.is_not.True(mode:is_enabled_globally())
+        assert.is.True(mode:is_enabled_for_buffer(1))
+
     end)
 end)
