@@ -7,133 +7,14 @@ local module = {}
 
 module.setup_called = false
 
-local _active_modes = {}
-
---- get global active modes list
----@return table
-local global_list = function()
-    if not _active_modes["*"] then
-        _active_modes["*"] = {}
-    end
-    return _active_modes["*"]
-end
-
---- get list of active modes for buffer
----@param buffer number
----@return table
-local buffer_list = function(buffer)
-    if not _active_modes[buffer] then
-        _active_modes[buffer] = {}
-    end
-    return _active_modes[buffer]
-end
-
---- add mode to buffer active modes list
----@param id string
----@param options table
-local function add_to_buffer_list(id, options)
-    if global_list()[id] then
-        print("Mode " .. id .. " is already enabled Globally")
-        return
-    end
-    local mode = mode_storage[id]
-    mode:activate(options)
-    buffer_list(options.buffer)[id] = {
-        id = id,
-        icon = mode:get_icon(),
-        options = options,
-    }
-end
-
---- remove mode from buffer's active modes list
----@param id string
----@param options table
-local function remove_from_buffer_list(id, options)
-    if global_list()[id] then
-        throw_error("Mode " .. id .. " is enabled Globally")
-    end
-    local mode = mode_storage[id]
-    mode:deactivate(options)
-    buffer_list(options.buffer)[id] = nil
-end
-
---- handle toggling of mode for buffer
----@param id string identifier of buffer
----@param options table additional options
-local function handle_buffer_toggle(id, options)
-    if buffer_list(options.buffer)[id] then
-        remove_from_buffer_list(id, options)
-    else
-        add_to_buffer_list(id, options)
-    end
-end
-
---- check if mode is enabled for any buffer
----@param id string identifier for mode
----@return table list of buffer for which mode is active
-local function get_active_buffers(id)
-    local active_buffers_list = {}
-    for buffer, modes_list in pairs(_active_modes) do
-        if buffer ~= "*" then
-            if vim.tbl_contains(vim.tbl_keys(modes_list), id) then
-                table.insert(active_buffers_list, buffer)
-            end
-        end
-    end
-    return active_buffers_list
-end
-
---- add mode to global active modes list
----@param id string identifier of mode
----@param options table additional options
-local function add_to_global_list(id, options)
-    local mode = mode_storage[id]
-    local in_buffers_list = get_active_buffers(id)
-    if #in_buffers_list > 0 then
-        print("Mode " .. id .. " is enabled in buffers; disabling")
-        for _, buffer in pairs(in_buffers_list) do
-            buffer_list(buffer)[id] = nil
-        end
-    end
-    mode:activate(options)
-    global_list()[id] = {
-        id = id,
-        icon = mode:get_icon(),
-        options = options,
-    }
-end
-
---- remove mode from global active modes list
----@param id string identifier of mode
----@param options table additional options
-local function remove_from_global_list(id, options)
-    local mode = mode_storage[id]
-    mode:deactivate(options)
-    global_list()[id] = nil
-end
-
---- toggle mode globally
----@param id string identifier of mode
----@param options table additional options
-local function handle_global_toggle(id, options)
-    if global_list()[id] then
-        remove_from_global_list(id, options)
-    else
-        add_to_global_list(id, options)
-    end
-end
-
 local function on_BufDel_clear_active_modes()
     local bufnr = tonumber(vim.fn.expand("<abuf>"))
-    if not buffer_list(bufnr) then
-        return
+    for _, mode in pairs(mode_storage) do
+        if mode:is_enabled_for_buffer(bufnr) then
+            local options = mode:get_options_for_buffer(bufnr)
+            mode:toggle(options)
+        end
     end
-
-    for id, data in pairs(buffer_list(bufnr)) do
-        module.toggle_mode(id, data.options)
-        buffer_list(bufnr)[id] = nil
-    end
-    _active_modes[bufnr] = nil
 end
 
 --- get a mode or create a new Mode
@@ -164,6 +45,7 @@ end
 ---@param id string
 ---@param options table
 function module.toggle_mode(id, options)
+    options = options or {}
     if not module.setup_called then
         throw_error(
             "Plugin not initialized, please add require('modes').setup() to config"
@@ -176,19 +58,23 @@ function module.toggle_mode(id, options)
         throw_error("Mode " .. id .. " doesn't exist")
     end
 
-    if options and options.buffer then
-        handle_buffer_toggle(id, options)
-    else
-        handle_global_toggle(id, options)
-    end
+    mode:toggle(options)
 end
 
 --- get list of icons of active modes to display
 ---@return table list of icons
 function module.get_active_modes_icons(buffer)
     local icon_list = {}
-    for _, id_and_icon in pairs(_active_modes[buffer]) do
-        table.insert(icon_list, id_and_icon.icon)
+    for _, mode in pairs(mode_storage) do
+        if buffer == "*" then
+            if mode:is_enabled_globally() then
+                table.insert(icon_list, mode:get_icon())
+            end
+        else
+            if mode:is_enabled_for_buffer(buffer) then
+                table.insert(icon_list, mode:get_icon())
+            end
+        end
     end
     return icon_list
 end
@@ -196,15 +82,28 @@ end
 --- remove all defined modes from storage
 function module._delete_all_modes()
     mode_storage = {}
-    _active_modes = {}
 end
 
 function module._get_globally_active_mode_with_id(id)
-    return _active_modes["*"][id]
+    local mode = mode_storage[id]
+    if mode and mode:is_enabled_globally() then
+        return {
+            id = mode:get_id(),
+            icon = mode:get_icon(),
+            options = mode:get_options_for_global(),
+        }
+    end
 end
 
 function module._get_buffer_active_mode_with_id(buffer, id)
-    return _active_modes[buffer][id]
+    local mode = mode_storage[id]
+    if mode and mode:is_enabled_for_buffer(buffer) then
+        return {
+            id = mode:get_id(),
+            icon = mode:get_icon(),
+            options = mode:get_options_for_buffer(buffer),
+        }
+    end
 end
 
 function module.map(mode_id, maps, options) end

@@ -1,4 +1,3 @@
-local throw_error = require("modes.utils").throw_error
 local module = {}
 --- get icon for mode.
 -- if icon is not provided then return 1st character of id
@@ -115,8 +114,9 @@ function module.get_mode_class()
     --- Disables the mode globally.
     function Mode:disable_globally()
         if not self._buffers["*"] then
-            throw_error(
-                "The Mode " .. self:get_id() .. " was not enabled Globally!"
+            vim.notify(
+                "The Mode " .. self:get_id() .. " was not enabled Globally!",
+                vim.log.levels.WARN
             )
         else
             self._buffers = {}
@@ -157,8 +157,9 @@ function module.get_mode_class()
     --- @param options table options passed in
     function Mode:handle_buffer_toggle(bufnr, options)
         if self._buffers["*"] then
-            throw_error(
-                "Mode " .. self:get_id() .. " is already activated Globally"
+            vim.notify(
+                "Mode " .. self:get_id() .. " is already activated Globally",
+                vim.log.levels.WARN
             )
         else
             self:handle_toggle(self:is_enabled_for_buffer(bufnr), options)
@@ -179,6 +180,18 @@ function module.get_mode_class()
         else
             self:handle_global_toggle(options)
         end
+    end
+
+    --- Get options for buffer
+    --- @param bufnr number buffer number
+    function Mode:get_options_for_buffer(bufnr)
+        return self._buffers[tostring(bufnr)]
+    end
+
+    --- Get options for buffer
+    --- @param bufnr number buffer number
+    function Mode:get_options_for_global()
+        return self._buffers["*"]
     end
 
     return Mode

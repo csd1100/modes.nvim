@@ -1,4 +1,5 @@
 local spy = require("luassert.spy")
+local stub = require("luassert.stub")
 
 describe("modes-class_spec", function()
     local mode_class
@@ -123,9 +124,13 @@ describe("modes-class_spec", function()
         assert.is.True(mode:is_enabled_globally())
         assert.is_not.True(mode:is_enabled_for_buffer(1))
 
-        assert.has.errors(function()
-            mode:toggle({ buffer = 1, test_1 = "1" })
-        end)
+        local warn_stub = stub(vim, "notify")
+        mode:toggle({ buffer = 1, test_1 = "1" })
+        assert.stub(warn_stub).was.called_with(
+            "Mode " .. test_data.id .. " is already activated Globally",
+            vim.log.levels.WARN
+        )
+
         assert.same(mode._buffers, { ["*"] = { test_opt = "test" } })
         assert.is.True(mode:is_enabled_globally())
         assert.is_not.True(mode:is_enabled_for_buffer(1))
@@ -149,6 +154,5 @@ describe("modes-class_spec", function()
         assert.same(mode._buffers, { ["1"] = { buffer = 1, test_1 = "1" } })
         assert.is_not.True(mode:is_enabled_globally())
         assert.is.True(mode:is_enabled_for_buffer(1))
-
     end)
 end)

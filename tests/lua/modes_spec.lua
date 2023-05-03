@@ -1,5 +1,6 @@
 local utils = require("utils")
 local spy = require("luassert.spy")
+local stub = require("luassert.stub")
 
 describe("modes_spec", function()
     local modes
@@ -20,6 +21,29 @@ describe("modes_spec", function()
         end)
     end)
 
+    it(
+        "modes.create_if_not_present throws an error if modes.setup() not called",
+        function()
+            local test_data = {
+                id = "one",
+                icon = "1",
+                activation_fn = spy.new(function() end),
+                deactivation_fn = spy.new(function() end),
+            }
+
+            package.loaded["modes"] = nil
+            local local_modes = require("modes")
+
+            assert.has.error(function()
+                local_modes.create_if_not_present(
+                    test_data.id,
+                    test_data.activation_fn,
+                    test_data.deactivation_fn,
+                    test_data.icon
+                )
+            end)
+        end
+    )
     it("modes.toggle_mode updates active list - global", function()
         local test_data = {
             id = "one",
@@ -40,7 +64,7 @@ describe("modes_spec", function()
         -- assert mode was added
         assert.same(
             modes._get_globally_active_mode_with_id(test_data.id),
-            { id = test_data.id, icon = test_data.icon }
+            { id = test_data.id, icon = test_data.icon, options = {} }
         )
         modes.toggle_mode(mode)
         -- assert mode was removed
@@ -272,7 +296,12 @@ describe("modes_spec mix validation", function()
         assert.equals(utils.has_value(icon_list_global, "1"), true)
         assert.equals(utils.has_value(icon_list_global, "2"), true)
         -- buffer 99 --
+        local warn_stub = stub(vim, "notify")
         modes.toggle_mode(mode1, options1)
+        assert.stub(warn_stub).was.called_with(
+            "Mode " .. test_data1.id .. " is already activated Globally",
+            vim.log.levels.WARN
+        )
 
         icon_list_global = modes.get_active_modes_icons("*")
         icon_list_local = modes.get_active_modes_icons("99")
@@ -309,7 +338,12 @@ describe("modes_spec mix validation", function()
 
         -- try to disable it shouldn't work as it should not enabled at all --
         -- disable buffer 99 --
+        local warn_stub = stub(vim, "notify")
         modes.toggle_mode(mode1, options1)
+        assert.stub(warn_stub).was.called_with(
+            "Mode " .. test_data1.id .. " is already activated Globally",
+            vim.log.levels.WARN
+        )
 
         icon_list_global = modes.get_active_modes_icons("*")
         icon_list_local = modes.get_active_modes_icons("99")
