@@ -252,15 +252,35 @@ describe("modes-class_spec keymap", function()
             assert.same(test_mode._existing_maps_cache, expected_existing_map)
 
             test_mode:apply_maps(test_data)
+
             -- assert keymaps are added
             assert.stub(vim_keymap_set_stub).was.called(4)
-            -- can only check last call with called_with
-            -- TODO: add assertions for all calls
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "v",
                 " 123",
                 ":lua print('<leader>123')<CR>",
                 { desc = "Do Something 2" }
+            )
+
+            assert.stub(vim_keymap_set_stub).was.called_with(
+                "n",
+                " 123",
+                ":lua print('<leader>123')<CR>",
+                { desc = "Do Something 2", buffer = buf_handle }
+            )
+
+            assert.stub(vim_keymap_set_stub).was.called_with(
+                "v",
+                " lq",
+                ":lua print('<leader>lq')<CR>",
+                { desc = "Do Something 2", buffer = buf_handle }
+            )
+
+            assert.stub(vim_keymap_set_stub).was.called_with(
+                "n",
+                " lq",
+                ":lua print('<leader>lq')<CR>",
+                { desc = "Do Something 2", buffer = buf_handle }
             )
         end
     )
@@ -394,8 +414,6 @@ describe("modes-class_spec keymap", function()
             test_mode:apply_maps(test_data)
             -- assert keymaps are added
             assert.stub(vim_keymap_set_stub).was.called(4)
-            -- can only check last call with called_with
-            -- TODO: add assertions for all calls
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "v",
                 " 123",
@@ -403,14 +421,42 @@ describe("modes-class_spec keymap", function()
                 { desc = "Do Something 2" }
             )
 
+            assert.stub(vim_keymap_set_stub).was.called_with(
+                "n",
+                " 123",
+                ":lua print('<leader>123')<CR>",
+                { desc = "Do Something 2", buffer = buf_handle }
+            )
+
+            assert.stub(vim_keymap_set_stub).was.called_with(
+                "v",
+                " lq",
+                ":lua print('<leader>lq')<CR>",
+                { desc = "Do Something 2", buffer = buf_handle }
+            )
+
+            assert.stub(vim_keymap_set_stub).was.called_with(
+                "n",
+                " lq",
+                ":lua print('<leader>lq')<CR>",
+                { desc = "Do Something 2", buffer = buf_handle }
+            )
+
             test_mode:unapply_maps(test_data)
-            -- assert keymaps are added
+            -- assert keymaps are removed
             assert.stub(vim_keymap_del_stub).was.called(4)
-            -- can only check last call with called_with
-            -- TODO: add assertions for all calls
             assert
                 .stub(vim_keymap_del_stub).was
                 .called_with("v", " 123", { desc = "Do Something 2" })
+            assert
+                .stub(vim_keymap_del_stub).was
+                .called_with("n", " 123", { desc = "Do Something 2", buffer = buf_handle })
+            assert
+                .stub(vim_keymap_del_stub).was
+                .called_with("v", " lq", { desc = "Do Something 2", buffer = buf_handle })
+            assert
+                .stub(vim_keymap_del_stub).was
+                .called_with("n", " lq", { desc = "Do Something 2", buffer = buf_handle })
             -- assert map was restored
             assert
                 .stub(vim_keymap_set_stub).was
@@ -425,123 +471,160 @@ describe("modes-class_spec keymap", function()
         end
     )
 
-    it(
-        "tests buffer apply_maps and unapply_maps",
-        function()
-            local buf_handle = vim.api.nvim_create_buf(true, false)
-            vim.api.nvim_buf_attach(buf_handle, false, {})
-            -- set map before calling map
-            vim.keymap.set("n", "<leader>123", ":echo hello", { desc = "test" })
-            vim.api.nvim_buf_set_keymap(
-                buf_handle,
-                "v",
-                "<leader>lq",
-                ":print test",
-                { desc = "test" }
-            )
+    it("tests buffer apply_maps and unapply_maps", function()
+        local buf_handle = vim.api.nvim_create_buf(true, false)
+        vim.api.nvim_buf_attach(buf_handle, false, {})
+        -- set map before calling map
+        vim.keymap.set("n", "<leader>123", ":echo hello", { desc = "test" })
+        vim.api.nvim_buf_set_keymap(
+            buf_handle,
+            "v",
+            "<leader>lq",
+            ":print test",
+            { desc = "test" }
+        )
 
-            local n_leader_123 = vim.tbl_filter(function(row)
-                return row["lhs"] == " 123"
-            end, vim.api.nvim_get_keymap("n"))
+        local n_leader_123 = vim.tbl_filter(function(row)
+            return row["lhs"] == " 123"
+        end, vim.api.nvim_get_keymap("n"))
 
-            local v_leader_lq_buf = vim.tbl_filter(function(row)
-                return row["lhs"] == " lq"
-            end, vim.api.nvim_buf_get_keymap(buf_handle, "v"))
+        local v_leader_lq_buf = vim.tbl_filter(function(row)
+            return row["lhs"] == " lq"
+        end, vim.api.nvim_buf_get_keymap(buf_handle, "v"))
 
-            local vim_keymap_set_stub = stub(vim.keymap, "set", function() end)
-            local vim_keymap_del_stub = stub(vim.keymap, "del", function() end)
+        local vim_keymap_set_stub = stub(vim.keymap, "set", function() end)
+        local vim_keymap_del_stub = stub(vim.keymap, "del", function() end)
 
-            local test_mode = modes_class.new(
-                "test_mode",
-                function() end,
-                function() end,
-                "T"
-            )
+        local test_mode = modes_class.new(
+            "test_mode",
+            function() end,
+            function() end,
+            "T"
+        )
 
-            local expected_existing_map = {
-                ["n"] = {
-                    [" 123"] = n_leader_123[1],
+        local expected_existing_map = {
+            ["n"] = {
+                [" 123"] = n_leader_123[1],
+            },
+            ["v"] = {},
+        }
+
+        assert.same(test_mode._maps_cache, {})
+        assert.same(test_mode._existing_maps_cache, {})
+
+        test_mode:add_maps(test_data)
+
+        -- assert module cache is updated
+        assert.same(test_mode._maps_cache, {
+            ["n"] = {
+
+                [" lq"] = {
+
+                    ["rhs"] = ":lua print('<leader>lq')<CR>",
+                    ["opts"] = { desc = "Do Something 2" },
                 },
-                ["v"] = {},
-            }
-
-            assert.same(test_mode._maps_cache, {})
-            assert.same(test_mode._existing_maps_cache, {})
-
-            test_mode:add_maps(test_data)
-
-            -- assert module cache is updated
-            assert.same(test_mode._maps_cache, {
-                ["n"] = {
-
-                    [" lq"] = {
-
-                        ["rhs"] = ":lua print('<leader>lq')<CR>",
-                        ["opts"] = { desc = "Do Something 2" },
-                    },
-                    [" 123"] = {
-                        ["rhs"] = ":lua print('<leader>123')<CR>",
-                        ["opts"] = { desc = "Do Something 2" },
-                    },
+                [" 123"] = {
+                    ["rhs"] = ":lua print('<leader>123')<CR>",
+                    ["opts"] = { desc = "Do Something 2" },
                 },
-                ["v"] = {
-                    [" lq"] = {
-                        ["rhs"] = ":lua print('<leader>lq')<CR>",
-                        ["opts"] = { desc = "Do Something 2" },
-                    },
-                    [" 123"] = {
-                        ["rhs"] = ":lua print('<leader>123')<CR>",
-                        ["opts"] = { desc = "Do Something 2" },
-                    },
+            },
+            ["v"] = {
+                [" lq"] = {
+                    ["rhs"] = ":lua print('<leader>lq')<CR>",
+                    ["opts"] = { desc = "Do Something 2" },
                 },
+                [" 123"] = {
+                    ["rhs"] = ":lua print('<leader>123')<CR>",
+                    ["opts"] = { desc = "Do Something 2" },
+                },
+            },
+        })
+
+        assert.same(test_mode._existing_maps_cache, expected_existing_map)
+
+        local expected_existing_map_after_apply =
+            vim.deepcopy(expected_existing_map)
+        expected_existing_map_after_apply[tostring(buf_handle)] = {
+            ["v"] = {
+                [" lq"] = v_leader_lq_buf[1],
+            },
+        }
+
+        test_mode:apply_maps(test_data, { buffer = buf_handle })
+
+        assert.same(
+            test_mode._existing_maps_cache,
+            expected_existing_map_after_apply
+        )
+        -- assert keymaps are added
+        assert.stub(vim_keymap_set_stub).was.called(4)
+
+        assert.stub(vim_keymap_set_stub).was.called_with(
+            "v",
+            " 123",
+            ":lua print('<leader>123')<CR>",
+            { desc = "Do Something 2", buffer = buf_handle }
+        )
+
+        assert.stub(vim_keymap_set_stub).was.called_with(
+            "n",
+            " 123",
+            ":lua print('<leader>123')<CR>",
+            { desc = "Do Something 2", buffer = buf_handle }
+        )
+
+        assert.stub(vim_keymap_set_stub).was.called_with(
+            "v",
+            " lq",
+            ":lua print('<leader>lq')<CR>",
+            { desc = "Do Something 2", buffer = buf_handle }
+        )
+
+        assert.stub(vim_keymap_set_stub).was.called_with(
+            "n",
+            " lq",
+            ":lua print('<leader>lq')<CR>",
+            { desc = "Do Something 2", buffer = buf_handle }
+        )
+
+        test_mode:unapply_maps(test_data, { buffer = buf_handle })
+
+        -- assert keymaps are removed
+        assert.stub(vim_keymap_del_stub).was.called(4)
+        assert
+            .stub(vim_keymap_del_stub).was
+            .called_with("v", " 123", { desc = "Do Something 2", buffer = buf_handle })
+        assert
+            .stub(vim_keymap_del_stub).was
+            .called_with("n", " 123", { desc = "Do Something 2", buffer = buf_handle })
+        assert
+            .stub(vim_keymap_del_stub).was
+            .called_with("v", " lq", { desc = "Do Something 2", buffer = buf_handle })
+        assert
+            .stub(vim_keymap_del_stub).was
+            .called_with("n", " lq", { desc = "Do Something 2", buffer = buf_handle })
+
+        -- assert map was restored
+        assert.stub(vim_keymap_set_stub).was.called(6)
+        assert
+            .stub(vim_keymap_set_stub).was
+            .called_with("n", " 123", ":echo hello", {
+                desc = "test",
+                buffer = buf_handle,
+                expr = true,
+                nowait = 0,
+                script = 0,
+                silent = 0,
             })
-
-            assert.same(test_mode._existing_maps_cache, expected_existing_map)
-
-            local expected_existing_map_after_apply =
-                vim.deepcopy(expected_existing_map)
-            expected_existing_map_after_apply[tostring(buf_handle)] = {
-                ["v"] = {
-                    [" lq"] = v_leader_lq_buf[1],
-                },
-            }
-
-            test_mode:apply_maps(test_data, { buffer = buf_handle })
-
-            assert.same(
-                test_mode._existing_maps_cache,
-                expected_existing_map_after_apply
-            )
-            -- assert keymaps are added
-            assert.stub(vim_keymap_set_stub).was.called(4)
-            -- can only check last call with called_with
-            -- TODO: add assertions for all calls
-            assert.stub(vim_keymap_set_stub).was.called_with(
-                "v",
-                " 123",
-                ":lua print('<leader>123')<CR>",
-                { desc = "Do Something 2", buffer = buf_handle }
-            )
-
-            test_mode:unapply_maps(test_data, { buffer = buf_handle })
-            -- assert keymaps are added
-            assert.stub(vim_keymap_del_stub).was.called(4)
-            -- can only check last call with called_with
-            -- TODO: add assertions for all calls
-            assert
-                .stub(vim_keymap_del_stub).was
-                .called_with("v", " 123", { desc = "Do Something 2", buffer = buf_handle })
-            -- assert map was restored
-            assert
-                .stub(vim_keymap_set_stub).was
-                .called_with("n", " 123", ":echo hello", {
-                    desc = "test",
-                    buffer = buf_handle,
-                    expr = true,
-                    nowait = 0,
-                    script = 0,
-                    silent = 0,
-                })
-        end
-    )
+        assert
+            .stub(vim_keymap_set_stub).was
+            .called_with("v", " lq", ":print test", {
+                desc = "test",
+                buffer = buf_handle,
+                expr = true,
+                nowait = 0,
+                script = 0,
+                silent = 0,
+            })
+    end)
 end)
