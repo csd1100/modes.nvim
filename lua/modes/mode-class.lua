@@ -250,7 +250,7 @@ function module.get_mode_class()
                         .. " is already present for mode "
                         .. self:get_id()
                         .. ". Replacing the existing map.",
-                    vim.log.levels.WARN
+                    vim.log.levels.TRACE
                 )
             end
             self._maps_cache[vim_mode][lhs] = rhs_and_opts
@@ -358,7 +358,7 @@ function module.get_mode_class()
                 end
             end
             opts.desc = opts.desc or ""
-            opts.desc = opts.desc .. " Auto-added for mode: " .. self:get_id()
+            opts.desc = opts.desc .. " <M:" .. self:get_id() .. ">"
             vim.keymap.set(vim_mode, lhs, rhs, opts)
         end
         utils.traverse_maps_and_apply(maps, set_map)
