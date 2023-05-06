@@ -151,6 +151,7 @@ function module.get_mode_class()
             self:enable_globally(options)
         end
         self._activation_fn(options)
+        self:apply_maps(self._maps_cache, options)
     end
 
     --- Disables the mode globally.
@@ -181,6 +182,7 @@ function module.get_mode_class()
             self:disable_globally()
         end
         self._deactivation_fn(options)
+        self:unapply_maps(self._maps_cache, options)
     end
 
     --- Toggles the mode based on passed in enabled value
@@ -355,6 +357,8 @@ function module.get_mode_class()
                     end
                 end
             end
+            opts.desc = opts.desc or ""
+            opts.desc = opts.desc .. " Auto-added for mode: " .. self:get_id()
             vim.keymap.set(vim_mode, lhs, rhs, opts)
         end
         utils.traverse_maps_and_apply(maps, set_map)
@@ -435,14 +439,14 @@ function module.get_mode_class()
         maps = normalize_maps_lhs(maps)
         local function restore_map(vim_mode, lhs, keymap_data)
             lhs = utils.normalize_lhs(lhs)
-            local rhs = keymap_data["rhs"]
+            local rhs = keymap_data["rhs"] or keymap_data["callback"]
             local opts =
                 utils.tbl_filter_keys(keymap_data, utils.allowed_keymap_opts)
             if options.buffer then
                 opts.buffer = options.buffer
             end
             -- required to reset keymap
-            opts.expr = true
+            opts.replace_keycodes = false
             vim.keymap.set(vim_mode, lhs, rhs, opts)
         end
 

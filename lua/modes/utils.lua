@@ -92,7 +92,6 @@ function M.normalize_lhs(lhs)
 end
 
 M.allowed_keymap_opts = {
-    "buffer",
     "nowait",
     "silent",
     "script",

@@ -106,9 +106,21 @@ function module._get_buffer_active_mode_with_id(buffer, id)
     end
 end
 
-function module.map(mode_id, maps, options) end
+function module.add_maps(mode_id, maps)
+    local mode = mode_storage[mode_id]
+    if not mode then
+        throw_error("Mode " .. mode_id .. " not found")
+    end
+    mode:add_maps(maps)
+end
 
-function module.unmap(mode_id, unmaps, options) end
+function module.remove_maps(mode_id, unmaps)
+    local mode = mode_storage[mode_id]
+    if not mode then
+        throw_error("Mode " .. mode_id .. " not found")
+    end
+    mode:remove_maps(unmaps)
+end
 
 function module.setup()
     vim.api.nvim_create_augroup("ModesNvim", {
