@@ -323,7 +323,7 @@ function module.get_mode_class()
             end
         end
 
-        local function set_map(vim_mode, lhs, rhs_and_opts)
+        local function apply_a_map(vim_mode, lhs, rhs_and_opts)
             lhs = utils.normalize_lhs(lhs)
             if
                 not utils.is_nested_present(self._maps_cache, { vim_mode, lhs })
@@ -361,14 +361,14 @@ function module.get_mode_class()
             opts.desc = opts.desc .. " <M:" .. self:get_id() .. ">"
             vim.keymap.set(vim_mode, lhs, rhs, opts)
         end
-        utils.traverse_maps_and_apply(maps, set_map)
+        utils.traverse_maps_and_apply(maps, apply_a_map)
     end
 
     --- Unmaps the maps from vim runtime
     ---@param maps table maps to unmap
     ---@param options table options from activate contains buffer number
     function Mode:unmap_maps(maps, options)
-        local function delete_map(vim_mode, lhs, rhs_and_opts)
+        local function unmap_a_map(vim_mode, lhs, rhs_and_opts)
             lhs = utils.normalize_lhs(lhs)
             if
                 not utils.is_nested_present(self._maps_cache, { vim_mode, lhs })
@@ -386,7 +386,7 @@ function module.get_mode_class()
             end
             vim.keymap.del(vim_mode, lhs, opts)
         end
-        utils.traverse_maps_and_apply(maps, delete_map)
+        utils.traverse_maps_and_apply(maps, unmap_a_map)
     end
 
     --- normalizes lhs for maps table and returns a new table such that map has new lhs keys without `<leader>`

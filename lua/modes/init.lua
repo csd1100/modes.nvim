@@ -106,7 +106,13 @@ function module._get_buffer_active_mode_with_id(buffer, id)
     end
 end
 
+--- Add modes to specified mode
+---@param mode_id string mode id specified during creation of mode
+---@param maps table maps to add
 function module.add_maps(mode_id, maps)
+    if not mode_id or not maps then
+        throw_error("Mode ID and maps are required arguments")
+    end
     local mode = mode_storage[mode_id]
     if not mode then
         throw_error("Mode " .. mode_id .. " not found")
@@ -114,6 +120,18 @@ function module.add_maps(mode_id, maps)
     mode:add_maps(maps)
 end
 
+--- Apply maps. Can be used to apply maps during activation of mode
+---@param maps table maps to apply
+function module.apply_maps(maps)
+    if not maps then
+        throw_error("maps is a required argument")
+    end
+    mode:add_maps(maps)
+end
+
+--- Maps to remove from mode
+---@param mode_id string mode id specified during creation of mode
+---@param unmaps table maps to remove
 function module.remove_maps(mode_id, unmaps)
     local mode = mode_storage[mode_id]
     if not mode then
