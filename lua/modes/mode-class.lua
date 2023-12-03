@@ -196,6 +196,29 @@ function module.get_mode_class()
         end
     end
 
+    --- Enables the mode
+    --- @param enabled boolean if mode is enabled or disabled
+    --- @param options table options passed in
+    function Mode:handle_enable(enabled, options)
+        if not enabled then
+            self:activate(options)
+        end
+    end
+
+    --- Disables the mode
+    --- @param enabled boolean if mode is enabled or disabled
+    --- @param options table options passed in
+    function Mode:handle_disable(enabled, options)
+        if enabled then
+            self:deactivate(options)
+        else
+            vim.notify(
+                "Mode " .. self:get_id() .. " is not enabled",
+                vim.log.levels.WARN
+            )
+        end
+    end
+
     --- Toggles the mode for buffer
     --- @param bufnr number buffer number
     --- @param options table options passed in
@@ -216,6 +239,46 @@ function module.get_mode_class()
         self:handle_toggle(self:is_enabled_globally(), options)
     end
 
+    --- Enables the mode for buffer
+    --- @param bufnr number buffer number
+    --- @param options table options passed in
+    function Mode:handle_buffer_enable(bufnr, options)
+        if self._buffers["*"] then
+            vim.notify(
+                "Mode " .. self:get_id() .. " is already activated Globally",
+                vim.log.levels.WARN
+            )
+        else
+            self:handle_enable(self:is_enabled_for_buffer(bufnr), options)
+        end
+    end
+
+    --- Enables the mode globally
+    --- @param options table options passed in
+    function Mode:handle_global_enable(options)
+        self:handle_enable(self:is_enabled_globally(), options)
+    end
+
+    --- Disables the mode for buffer
+    --- @param bufnr number buffer number
+    --- @param options table options passed in
+    function Mode:handle_buffer_disable(bufnr, options)
+        if self._buffers["*"] then
+            vim.notify(
+                "Mode " .. self:get_id() .. " is already activated Globally",
+                vim.log.levels.WARN
+            )
+        else
+            self:handle_disable(self:is_enabled_for_buffer(bufnr), options)
+        end
+    end
+
+    --- Disables the mode globally
+    --- @param options table options passed in
+    function Mode:handle_global_disable(options)
+        self:handle_disable(self:is_enabled_globally(), options)
+    end
+
     --- Toggles the mode
     --- @param options table options passed in
     function Mode:toggle(options)
@@ -223,6 +286,26 @@ function module.get_mode_class()
             self:handle_buffer_toggle(options.buffer, options)
         else
             self:handle_global_toggle(options)
+        end
+    end
+
+    --- Enables the mode
+    --- @param options table options passed in
+    function Mode:enable(options)
+        if options.buffer then
+            self:handle_buffer_enable(options.buffer, options)
+        else
+            self:handle_global_enable(options)
+        end
+    end
+
+    --- Disables the mode
+    --- @param options table options passed in
+    function Mode:disable(options)
+        if options.buffer then
+            self:handle_buffer_disable(options.buffer, options)
+        else
+            self:handle_global_disable(options)
         end
     end
 

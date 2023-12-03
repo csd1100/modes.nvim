@@ -61,6 +61,46 @@ function module.toggle_mode(id, options)
     mode:toggle(options)
 end
 
+--- enable the mode
+---@param id string
+---@param options table
+function module.enable_mode(id, options)
+    options = options or {}
+    if not module.setup_called then
+        throw_error(
+            "Plugin not initialized, please add require('modes').setup() to config"
+        )
+        return
+    end
+
+    local mode = mode_storage[id]
+    if not mode then
+        throw_error("Mode " .. id .. " doesn't exist")
+    end
+
+    mode:enable(options)
+end
+
+--- disable the mode
+---@param id string
+---@param options table
+function module.disable_mode(id, options)
+    options = options or {}
+    if not module.setup_called then
+        throw_error(
+            "Plugin not initialized, please add require('modes').setup() to config"
+        )
+        return
+    end
+
+    local mode = mode_storage[id]
+    if not mode then
+        throw_error("Mode " .. id .. " doesn't exist")
+    end
+
+    mode:disable(options)
+end
+
 --- get list of icons of active modes to display
 ---@return table list of icons
 function module.get_active_modes_icons(buffer)

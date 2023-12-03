@@ -155,6 +155,114 @@ describe("modes-class_spec", function()
         assert.is_not.True(mode:is_enabled_globally())
         assert.is.True(mode:is_enabled_for_buffer(1))
     end)
+
+    it(
+        "when mode:enable enables the mode and mode:disable disables the mode",
+        function()
+            local test_data = {
+                id = "one",
+                icon = "1",
+                activation_fn = spy.new(function() end),
+                deactivation_fn = spy.new(function() end),
+            }
+
+            local mode = mode_class.new(
+                test_data.id,
+                test_data.activation_fn,
+                test_data.deactivation_fn,
+                test_data.icon
+            )
+
+            assert.same(mode._buffers, {})
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.is_not.True(mode:is_enabled_for_buffer(1))
+
+            mode:enable({ buffer = 1, test_1 = "1" })
+
+            assert.same(mode._buffers, { ["1"] = { buffer = 1, test_1 = "1" } })
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.is.True(mode:is_enabled_for_buffer(1))
+
+            mode:enable({ buffer = 2, test_2 = "2" })
+
+            assert.same(mode._buffers, {
+                ["1"] = { buffer = 1, test_1 = "1" },
+                ["2"] = { buffer = 2, test_2 = "2" },
+            })
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.is.True(mode:is_enabled_for_buffer(1))
+            assert.is.True(mode:is_enabled_for_buffer(2))
+
+            mode:disable({ buffer = 2, test_2 = "2" })
+
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.is_not.True(mode:is_enabled_for_buffer(2))
+            assert.is.True(mode:is_enabled_for_buffer(1))
+            assert.same(mode._buffers, {
+                ["1"] = { buffer = 1, test_1 = "1" },
+            })
+
+            mode:enable({ test_opt = "test" })
+
+            assert.same(mode._buffers, { ["*"] = { test_opt = "test" } })
+            assert.is.True(mode:is_enabled_globally())
+            assert.is_not.True(mode:is_enabled_for_buffer(1))
+
+            local warn_stub = stub(vim, "notify")
+            mode:enable({ buffer = 1, test_1 = "1" })
+            assert.stub(warn_stub).was.called_with(
+                "Mode " .. test_data.id .. " is already activated Globally",
+                vim.log.levels.WARN
+            )
+
+            assert.same(mode._buffers, { ["*"] = { test_opt = "test" } })
+            assert.is.True(mode:is_enabled_globally())
+            assert.is_not.True(mode:is_enabled_for_buffer(1))
+
+            mode:disable({ test_opt = "test" })
+
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.same(mode._buffers, {})
+
+            mode:enable({ test_opt = "test" })
+            assert.same(mode._buffers, { ["*"] = { test_opt = "test" } })
+            assert.is.True(mode:is_enabled_globally())
+
+            mode:disable({ test_opt = "test" })
+
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.same(mode._buffers, {})
+
+            mode:enable({ buffer = 1, test_1 = "1" })
+
+            assert.same(mode._buffers, { ["1"] = { buffer = 1, test_1 = "1" } })
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.is.True(mode:is_enabled_for_buffer(1))
+
+            -- repeat call doesn't change anything
+            mode:enable({ buffer = 1, test_1 = "1" })
+
+            assert.same(mode._buffers, { ["1"] = { buffer = 1, test_1 = "1" } })
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.is.True(mode:is_enabled_for_buffer(1))
+
+            mode:disable({ buffer = 1, test_1 = "1" })
+
+            assert.same(mode._buffers, {})
+            assert.is_not.True(mode:is_enabled_globally())
+            assert.is_not.True(mode:is_enabled_for_buffer(1))
+
+            -- gives warning if mode is not enabled
+            warn_stub = nil
+            local warn_stub = stub(vim, "notify")
+            mode:disable({ buffer = 1, test_1 = "1" })
+            assert.stub(warn_stub).was.called_with(
+                "Mode " .. test_data.id .. " is not enabled",
+                vim.log.levels.WARN
+            )
+
+        end
+    )
 end)
 
 local function normalize_lhs(lhs)
