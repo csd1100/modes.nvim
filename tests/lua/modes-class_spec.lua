@@ -259,28 +259,28 @@ describe("modes-class_spec keymap", function()
                 "v",
                 " 123",
                 ":lua print('<leader>123')<CR>",
-                { desc = "Do Something 2" }
+                { desc = "Do Something 2 <M:test_mode>" }
             )
 
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "n",
                 " 123",
                 ":lua print('<leader>123')<CR>",
-                { desc = "Do Something 2", buffer = buf_handle }
+                { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
             )
 
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "v",
                 " lq",
                 ":lua print('<leader>lq')<CR>",
-                { desc = "Do Something 2", buffer = buf_handle }
+                { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
             )
 
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "n",
                 " lq",
                 ":lua print('<leader>lq')<CR>",
-                { desc = "Do Something 2", buffer = buf_handle }
+                { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
             )
         end
     )
@@ -418,28 +418,28 @@ describe("modes-class_spec keymap", function()
                 "v",
                 " 123",
                 ":lua print('<leader>123')<CR>",
-                { desc = "Do Something 2" }
+                { desc = "Do Something 2 <M:test_mode>" }
             )
 
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "n",
                 " 123",
                 ":lua print('<leader>123')<CR>",
-                { desc = "Do Something 2", buffer = buf_handle }
+                { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
             )
 
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "v",
                 " lq",
                 ":lua print('<leader>lq')<CR>",
-                { desc = "Do Something 2", buffer = buf_handle }
+                { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
             )
 
             assert.stub(vim_keymap_set_stub).was.called_with(
                 "n",
                 " lq",
                 ":lua print('<leader>lq')<CR>",
-                { desc = "Do Something 2", buffer = buf_handle }
+                { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
             )
 
             test_mode:unapply_maps(test_data)
@@ -462,8 +462,8 @@ describe("modes-class_spec keymap", function()
                 .stub(vim_keymap_set_stub).was
                 .called_with("n", " 123", ":echo hello", {
                     desc = "test",
-                    buffer = 0,
-                    expr = true,
+                    expr = 0,
+                    replace_keycodes = false,
                     nowait = 0,
                     script = 0,
                     silent = 0,
@@ -563,28 +563,28 @@ describe("modes-class_spec keymap", function()
             "v",
             " 123",
             ":lua print('<leader>123')<CR>",
-            { desc = "Do Something 2", buffer = buf_handle }
+            { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
         )
 
         assert.stub(vim_keymap_set_stub).was.called_with(
             "n",
             " 123",
             ":lua print('<leader>123')<CR>",
-            { desc = "Do Something 2", buffer = buf_handle }
+            { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
         )
 
         assert.stub(vim_keymap_set_stub).was.called_with(
             "v",
             " lq",
             ":lua print('<leader>lq')<CR>",
-            { desc = "Do Something 2", buffer = buf_handle }
+            { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
         )
 
         assert.stub(vim_keymap_set_stub).was.called_with(
             "n",
             " lq",
             ":lua print('<leader>lq')<CR>",
-            { desc = "Do Something 2", buffer = buf_handle }
+            { desc = "Do Something 2 <M:test_mode>", buffer = buf_handle }
         )
 
         test_mode:unapply_maps(test_data, { buffer = buf_handle })
@@ -611,20 +611,22 @@ describe("modes-class_spec keymap", function()
             .called_with("n", " 123", ":echo hello", {
                 desc = "test",
                 buffer = buf_handle,
-                expr = true,
+                expr = 0,
                 nowait = 0,
                 script = 0,
                 silent = 0,
+                replace_keycodes = false,
             })
         assert
             .stub(vim_keymap_set_stub).was
             .called_with("v", " lq", ":print test", {
                 desc = "test",
                 buffer = buf_handle,
-                expr = true,
+                expr = 0,
                 nowait = 0,
                 script = 0,
                 silent = 0,
+                replace_keycodes = false,
             })
     end)
 end)
