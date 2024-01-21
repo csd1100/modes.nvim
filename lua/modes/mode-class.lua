@@ -326,6 +326,7 @@ function module.get_mode_class()
         local function store_maps(vim_mode, lhs, rhs_and_opts)
             lhs = utils.normalize_lhs(lhs)
             utils.init_nested_table(self._maps_cache, { vim_mode })
+            -- TODO: check if rhs is also present before logging
             if utils.is_nested_present(self._maps_cache, { vim_mode, lhs }) then
                 vim.notify(
                     "The keymap "
